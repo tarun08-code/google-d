@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode, Users, X, Phone, AlertTriangle, Navigation } from 'lucide-react';
+import Leaderboard from './Leaderboard';
+import AllParticipants from './AllParticipants';
 
 interface UserData {
   name: string;
   email: string;
   linkedinUrl: string;
   registrationDate: string;
+  following?: string[];
 }
 
 interface TimelineEvent {
@@ -17,8 +20,23 @@ interface TimelineEvent {
   type: 'registration' | 'ceremony' | 'hacking' | 'networking' | 'presentation';
 }
 
+interface ParticipantLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  isOnline: boolean;
+  lastSeen: string;
+  section: string;
+}
+
 const Dashboard: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [followingList, setFollowingList] = useState<string[]>([]);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'allParticipants'>('dashboard');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [participantLocations, setParticipantLocations] = useState<ParticipantLocation[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const timelineEvents: TimelineEvent[] = [
     {
@@ -66,11 +84,104 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const storedUserData = localStorage.getItem('userData');
     if (storedUserData) {
-      setUserData(JSON.parse(storedUserData));
+      const user = JSON.parse(storedUserData);
+      setUserData(user);
+      setFollowingList(user.following || []);
     }
+
+    // Get user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Location access denied:', error);
+          // Fallback to mock location (San Francisco area)
+          setUserLocation({ lat: 37.7749, lng: -122.4194 });
+        }
+      );
+    } else {
+      // Fallback location
+      setUserLocation({ lat: 37.7749, lng: -122.4194 });
+    }
+
+    // Mock participant locations (in a real app, this would come from an API)
+    const mockLocations: ParticipantLocation[] = [
+      {
+        id: '1',
+        name: 'Alex Chen',
+        latitude: 37.7849,
+        longitude: -122.4094,
+        isOnline: true,
+        lastSeen: '2 min ago',
+        section: 'Main Hall'
+      },
+      {
+        id: '2',
+        name: 'Sarah Johnson',
+        latitude: 37.7649,
+        longitude: -122.4294,
+        isOnline: true,
+        lastSeen: '5 min ago',
+        section: 'Workshop A'
+      },
+      {
+        id: '3',
+        name: 'Mike Rodriguez',
+        latitude: 37.7749,
+        longitude: -122.4094,
+        isOnline: false,
+        lastSeen: '15 min ago',
+        section: 'Networking Zone'
+      },
+      {
+        id: '4',
+        name: 'Emily Davis',
+        latitude: 37.7849,
+        longitude: -122.4294,
+        isOnline: true,
+        lastSeen: '1 min ago',
+        section: 'Tech Demo'
+      },
+      {
+        id: '5',
+        name: 'David Kim',
+        latitude: 37.7649,
+        longitude: -122.4094,
+        isOnline: true,
+        lastSeen: '3 min ago',
+        section: 'Sponsor Booth'
+      }
+    ];
+
+    setParticipantLocations(mockLocations);
   }, []);
 
-  const handleLogout = () => {
+  const handleFollow = (participantId: string) => {
+    const updatedFollowing = followingList.includes(participantId)
+      ? followingList.filter(id => id !== participantId)
+      : [...followingList, participantId];
+
+    setFollowingList(updatedFollowing);
+
+    if (userData) {
+      const updatedUserData = { ...userData, following: updatedFollowing };
+      setUserData(updatedUserData);
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+    }
+  };
+
+  const handleViewAllParticipants = () => {
+    setCurrentView('allParticipants');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+  }; const handleLogout = () => {
     localStorage.removeItem('userData');
     localStorage.removeItem('isLoggedIn');
     window.location.href = '/';
@@ -160,13 +271,16 @@ const Dashboard: React.FC = () => {
               <h1 className="text-lg sm:text-2xl font-bold text-[#E63946]">HackEvent</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="flex items-center space-x-1 sm:space-x-2">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-800/50 rounded-lg p-1 transition-colors"
+              >
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#E63946] rounded-full flex items-center justify-center">
                   <User size={12} className="text-white sm:hidden" />
                   <User size={16} className="text-white hidden sm:block" />
                 </div>
                 <span className="text-xs sm:text-sm text-gray-300 hidden xs:inline">{userData.name}</span>
-              </div>
+              </button>
               <button
                 onClick={handleLogout}
                 className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
@@ -281,30 +395,89 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* User Profile */}
+            {/* Participant Location Map */}
             <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Your Profile</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+                <MapPin className="w-5 h-5 text-[#E63946] mr-2" />
+                Live Participant Map
+              </h3>
 
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <User className="w-4 h-4 text-[#E63946] mr-3" />
-                  <span className="text-gray-300">{userData.name}</span>
+              {/* Mini Map Container */}
+              <div className="relative bg-gray-800 rounded-lg h-32 sm:h-40 overflow-hidden border border-gray-700">
+                {/* Map Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20">
+                  {/* Grid Pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="grid grid-cols-8 grid-rows-6 h-full">
+                      {Array.from({ length: 48 }, (_, i) => (
+                        <div key={i} className="border border-gray-600"></div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 text-[#E63946] mr-3" />
-                  <span className="text-gray-300">{userData.email}</span>
-                </div>
-                <div className="flex items-center">
-                  <Linkedin className="w-4 h-4 text-[#E63946] mr-3" />
-                  <a
-                    href={userData.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-300 hover:text-[#E63946] transition-colors text-sm truncate"
+
+                {/* User Location (Red Dot) */}
+                {userLocation && (
+                  <div
+                    className="absolute w-3 h-3 bg-[#E63946] rounded-full border-2 border-white shadow-lg animate-pulse"
+                    style={{
+                      left: '45%',
+                      top: '60%',
+                      transform: 'translate(-50%, -50%)'
+                    }}
                   >
-                    LinkedIn Profile
-                  </a>
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                      <span className="text-xs bg-[#E63946] text-white px-1 rounded whitespace-nowrap">You</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Participant Locations (Green Dots) */}
+                {participantLocations.map((participant, index) => {
+                  // Calculate position based on mock coordinates
+                  const left = 20 + (index * 15) % 60;
+                  const top = 20 + (index * 10) % 50;
+
+                  return (
+                    <div key={participant.id}>
+                      <div
+                        className={`absolute w-2.5 h-2.5 rounded-full border border-white shadow-md cursor-pointer hover:scale-125 transition-transform group ${participant.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+                          }`}
+                        style={{
+                          left: `${left}%`,
+                          top: `${top}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      >
+                        {/* Tooltip */}
+                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <div className="font-semibold">{participant.name}</div>
+                          <div className="text-gray-300">{participant.section}</div>
+                          <div className="text-green-400">{participant.lastSeen}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-[#E63946] rounded-full mr-2"></div>
+                    <span className="text-gray-400">You</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-gray-400">Online ({participantLocations.filter(p => p.isOnline).length})</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
+                    <span className="text-gray-400">Offline ({participantLocations.filter(p => !p.isOnline).length})</span>
+                  </div>
                 </div>
+                <span className="text-gray-500">Live</span>
               </div>
             </div>
           </div>
@@ -382,9 +555,129 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Leaderboard */}
+        <div className="mt-6 sm:mt-8">
+          <Leaderboard onFollow={handleFollow} onViewAll={handleViewAllParticipants} />
+        </div>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="relative w-full max-w-md mx-auto bg-gray-900 rounded-2xl border border-gray-700">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <User className="w-6 h-6 text-[#E63946] mr-3" />
+                  Your Profile
+                </h2>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Profile Content */}
+              <div className="p-6">
+                {/* Profile Avatar */}
+                <div className="text-center mb-6">
+                  <div className="w-20 h-20 bg-[#E63946] rounded-full flex items-center justify-center mx-auto mb-3">
+                    <User size={32} className="text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{userData.name}</h3>
+                  <p className="text-gray-400 text-sm">Event Participant</p>
+                </div>
+
+                {/* Profile Details */}
+                <div className="space-y-4">
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      <Mail className="w-4 h-4 text-[#E63946] mr-3" />
+                      <span className="text-gray-400 text-sm">Email</span>
+                    </div>
+                    <p className="text-white text-sm">{userData.email}</p>
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      <Linkedin className="w-4 h-4 text-[#E63946] mr-3" />
+                      <span className="text-gray-400 text-sm">Professional Profile</span>
+                    </div>
+                    <a
+                      href={userData.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 transition-colors text-sm underline"
+                    >
+                      View LinkedIn Profile
+                    </a>
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      <Users className="w-4 h-4 text-[#E63946] mr-3" />
+                      <span className="text-gray-400 text-sm">Networking</span>
+                    </div>
+                    <p className="text-white text-sm">
+                      Following: <span className="text-[#E63946] font-semibold">{followingList.length}</span> participants
+                    </p>
+                  </div>
+                </div>
+
+                {/* Emergency Section */}
+                <div className="mt-6 p-4 bg-[#E63946]/10 border border-[#E63946]/20 rounded-lg">
+                  <h4 className="text-[#E63946] font-semibold mb-3 flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Need Help?
+                  </h4>
+                  <button className="w-full bg-[#E63946] hover:bg-[#C5303E] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center">
+                    <Phone className="w-4 h-4 mr-2" />
+                    Emergency Contact
+                  </button>
+                  <p className="text-[#E63946] text-xs text-center mt-2">
+                    24/7 Support: +1 (555) 123-4567
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex space-x-3">
+                  <button
+                    onClick={() => setShowProfileModal(false)}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  // Show AllParticipants page if currentView is 'allParticipants'
+  if (currentView === 'allParticipants') {
+    return (
+      <AllParticipants
+        onFollow={handleFollow}
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
+
+  // Main dashboard content above this point is the return value
 };
 
 export default Dashboard;

@@ -5,9 +5,10 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'login' | 'register';
+  onAuthSuccess?: () => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,9 +46,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         name: formData.name,
         email: formData.email,
         linkedinUrl: formData.linkedinUrl,
-        registrationDate: new Date().toISOString()
+        registrationDate: new Date().toISOString(),
+        following: []
       }));
       localStorage.setItem('isLoggedIn', 'true');
+      onAuthSuccess?.();
       window.location.replace('/dashboard');
     } else {
       // Handle login logic here
@@ -58,9 +61,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           name: 'John Doe',
           email: formData.email,
           linkedinUrl: 'https://linkedin.com/in/johndoe',
-          registrationDate: new Date().toISOString()
+          registrationDate: new Date().toISOString(),
+          following: []
         }));
         localStorage.setItem('isLoggedIn', 'true');
+        onAuthSuccess?.();
         window.location.replace('/dashboard');
       }
     }
