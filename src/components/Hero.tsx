@@ -53,7 +53,7 @@ const Hero: React.FC = () => {
               <div className="text-gray-400">Events Hosted</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-2">95%</div>
+              <div className="text-3xl font-bold text-white mb-2">90%</div>
               <div className="text-gray-400">Success Rate</div>
             </div>
           </div>
