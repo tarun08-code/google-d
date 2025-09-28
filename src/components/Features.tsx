@@ -7,13 +7,13 @@ const Features: React.FC = () => {
       icon: Bot,
       title: 'AI Concierge',
       description: 'Chat with an intelligent event assistant that understands your needs and provides personalized recommendations.',
-      gradient: 'from-rose-500 to-pink-500',
+      gradient: 'from-[#E63946] to-pink-500',
     },
     {
       icon: Users,
       title: 'Smart Networking',
       description: 'Find and connect with like-minded professionals using AI-powered matching based on interests and goals.',
-      gradient: 'from-purple-500 to-rose-500',
+      gradient: 'from-purple-500 to-[#E63946]',
     },
     {
       icon: Calendar,
@@ -27,8 +27,8 @@ const Features: React.FC = () => {
     <section id="features" className="py-24 relative">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900/50 to-black" />
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-rose-500/5 rounded-full blur-3xl" />
-      
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#E63946]/5 rounded-full blur-3xl" />
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -41,15 +41,15 @@ const Features: React.FC = () => {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative p-8 bg-black/40 backdrop-blur-md border border-gray-800 rounded-2xl hover:border-rose-500/50 transition-all duration-500 hover:scale-105"
+              className="group relative p-6 sm:p-8 bg-black/40 backdrop-blur-md border border-gray-800 rounded-2xl hover:border-[#E63946]/50 transition-all duration-500 hover:scale-105"
             >
               {/* Card Background Glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
+              <div className="absolute inset-0 bg-gradient-to-br from-[#E63946]/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
               {/* Icon */}
               <div className={`relative mb-6 w-16 h-16 rounded-xl bg-gradient-to-br ${feature.gradient} p-4 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className="w-full h-full text-white" />
@@ -57,7 +57,7 @@ const Features: React.FC = () => {
 
               {/* Content */}
               <div className="relative">
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-rose-400 transition-colors">
+                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-[#E63946] transition-colors">
                   {feature.title}
                 </h3>
                 <p className="text-gray-300 leading-relaxed">
@@ -66,7 +66,7 @@ const Features: React.FC = () => {
               </div>
 
               {/* Hover Line */}
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-b-2xl" />
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#E63946] to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-b-2xl" />
             </div>
           ))}
         </div>

@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Play } from 'lucide-react';
+import AuthModal from './AuthModal';
 
 const Hero: React.FC = () => {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   return (
     <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-black to-gray-900/50" />
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
-      
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#E63946]/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#E63946]/5 rounded-full blur-3xl animate-pulse delay-1000" />
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Main Heading */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
@@ -16,7 +18,7 @@ const Hero: React.FC = () => {
             Smart Networking
           </span>
           <br />
-          <span className="bg-gradient-to-r from-rose-500 to-rose-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#E63946] to-[#C5303E] bg-clip-text text-transparent">
             for Events
           </span>
         </h1>
@@ -29,13 +31,16 @@ const Hero: React.FC = () => {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-          <button className="group flex items-center justify-center px-8 py-4 bg-rose-500 text-white rounded-xl font-semibold text-lg hover:bg-rose-600 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-rose-500/30 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 px-4">
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="group flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-[#E63946] text-white rounded-xl font-semibold text-base sm:text-lg hover:bg-[#C5303E] hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-[#E63946]/30 w-full sm:min-w-[200px] sm:w-auto"
+          >
             <Play className="mr-2 group-hover:scale-110 transition-transform" size={20} />
-            Get Started 
+            Get Started
           </button>
-          
-          <button className="group flex items-center justify-center px-8 py-4 border-2 border-gray-600 text-white rounded-xl font-semibold text-lg hover:border-rose-500 hover:text-rose-400 hover:scale-105 transition-all duration-300 min-w-[200px]">
+
+          <button className="group flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-600 text-white rounded-xl font-semibold text-base sm:text-lg hover:border-[#E63946] hover:text-[#E63946] hover:scale-105 transition-all duration-300 w-full sm:min-w-[200px] sm:w-auto">
             Learn More
             <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
           </button>
@@ -59,6 +64,13 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode="register"
+      />
     </section>
   );
 };

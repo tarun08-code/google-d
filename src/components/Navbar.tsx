@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import AuthModal from './AuthModal';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,7 +30,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-rose-500 hover:text-rose-400 transition-colors cursor-pointer">
+            <h1 className="text-2xl font-bold text-[#E63946] hover:text-[#C5303E] transition-colors cursor-pointer">
               Event Hub
             </h1>
           </div>
@@ -42,15 +45,24 @@ const Navbar: React.FC = () => {
                   className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors duration-200 relative group"
                 >
                   {link.name}
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-rose-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#E63946] scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Host an Event Button */}
-          <div className="hidden md:block">
-            <button className="bg-rose-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-600 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-rose-500/25">
+          {/* Action Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <button
+              onClick={() => {
+                setAuthMode('login');
+                setIsAuthModalOpen(true);
+              }}
+              className="text-gray-300 hover:text-white px-4 py-2 font-medium transition-colors duration-200"
+            >
+              Login
+            </button>
+            <button className="bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-[#E63946]/25">
               Host an Event
             </button>
           </div>
@@ -70,23 +82,42 @@ const Navbar: React.FC = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-black/95 backdrop-blur-md border-b border-gray-800">
-          <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className="px-4 pt-4 pb-6 space-y-2">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium transition-colors"
+                className="text-gray-300 hover:text-white block px-3 py-3 text-base font-medium transition-colors rounded-lg hover:bg-white/10"
                 onClick={() => setIsOpen(false)}
               >
                 {link.name}
               </a>
             ))}
-            <button className="w-full mt-4 bg-rose-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-600 transition-colors">
-              Host an Event
-            </button>
+            <div className="mt-6 space-y-3 pt-4 border-t border-gray-700">
+              <button
+                onClick={() => {
+                  setAuthMode('login');
+                  setIsAuthModalOpen(true);
+                  setIsOpen(false);
+                }}
+                className="w-full border border-[#E63946] text-[#E63946] px-6 py-2 rounded-lg font-medium hover:bg-[#E63946] hover:text-white transition-colors"
+              >
+                Login
+              </button>
+              <button className="w-full bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] transition-colors">
+                Host an Event
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+      />
     </nav>
   );
 };
