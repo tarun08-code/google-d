@@ -12,31 +12,31 @@ const Footer: React.FC = () => {
   return (
     <footer className="relative bg-black border-t border-gray-800">
       {/* Background Elements */}
-      <div className="absolute top-0 left-1/4 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl" />
-      
+      <div className="absolute top-0 left-1/4 w-64 h-64 bg-[#E63946]/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-[#E63946]/5 rounded-full blur-3xl" />
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-1">
-            <h3 className="text-2xl font-bold text-rose-500 mb-4">Event Hub</h3>
+            <h3 className="text-2xl font-bold text-[#E63946] mb-4">Event Hub</h3>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Revolutionizing event networking with AI-powered connections and smart insights.
             </p>
-            
+
             {/* Contact Info */}
             <div className="space-y-3">
               <div className="flex items-center text-gray-300">
-                <Mail className="w-4 h-4 mr-3 text-rose-400" />
+                <Mail className="w-4 h-4 mr-3 text-[#E63946]" />
                 <span>hello@eventhub.com</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <Phone className="w-4 h-4 mr-3 text-rose-400" />
+                <Phone className="w-4 h-4 mr-3 text-[#E63946]" />
                 <span>+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <MapPin className="w-4 h-4 mr-3 text-rose-400" />
+                <MapPin className="w-4 h-4 mr-3 text-[#E63946]" />
                 <span>San Francisco, CA</span>
               </div>
             </div>
@@ -52,7 +52,7 @@ const Footer: React.FC = () => {
                     <li key={link}>
                       <a
                         href="#"
-                        className="text-gray-400 hover:text-rose-400 transition-colors duration-200"
+                        className="text-gray-400 hover:text-[#E63946] transition-colors duration-200"
                       >
                         {link}
                       </a>
@@ -66,18 +66,18 @@ const Footer: React.FC = () => {
 
         {/* Newsletter Section */}
         <div className="border-t border-gray-800 pt-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-4 md:mb-0">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="mb-4 md:mb-0 text-center md:text-left">
               <h4 className="text-white font-semibold mb-2">Stay Updated</h4>
-              <p className="text-gray-400">Get the latest news and updates from Event Hub</p>
+              <p className="text-gray-400 text-sm sm:text-base">Get the latest news and updates from Event Hub</p>
             </div>
-            <div className="flex w-full md:w-auto max-w-md">
+            <div className="flex flex-col sm:flex-row w-full md:w-auto max-w-md gap-2 sm:gap-0">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-l-lg text-white placeholder-gray-400 focus:outline-none focus:border-rose-500"
+                className="flex-1 px-4 py-2 sm:py-3 bg-gray-900 border border-gray-700 rounded-lg sm:rounded-l-lg sm:rounded-r-none text-white placeholder-gray-400 focus:outline-none focus:border-[#E63946] text-sm sm:text-base"
               />
-              <button className="px-6 py-2 bg-rose-500 text-white rounded-r-lg hover:bg-rose-600 transition-colors font-medium">
+              <button className="px-4 sm:px-6 py-2 sm:py-3 bg-[#E63946] text-white rounded-lg sm:rounded-l-none sm:rounded-r-lg hover:bg-[#C5303E] transition-colors font-medium text-sm sm:text-base">
                 Subscribe
               </button>
             </div>
@@ -89,14 +89,14 @@ const Footer: React.FC = () => {
           <div className="text-gray-400 text-sm mb-4 md:mb-0">
             © 2025 Event Hub. All rights reserved.
           </div>
-          
+
           {/* Social Links */}
           <div className="flex space-x-6">
             {['Twitter', 'LinkedIn', 'GitHub', 'Discord'].map((social) => (
               <a
                 key={social}
                 href="#"
-                className="text-gray-400 hover:text-rose-400 transition-colors duration-200 text-sm"
+                className="text-gray-400 hover:text-[#E63946] transition-colors duration-200 text-sm"
               >
                 {social}
               </a>
