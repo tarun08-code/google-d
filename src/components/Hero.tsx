@@ -32,7 +32,7 @@ const Hero: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
           <button className="group flex items-center justify-center px-8 py-4 bg-rose-500 text-white rounded-xl font-semibold text-lg hover:bg-rose-600 hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-rose-500/30 min-w-[200px]">
             <Play className="mr-2 group-hover:scale-110 transition-transform" size={20} />
-            Get Started
+            Get Started 
           </button>
           
           <button className="group flex items-center justify-center px-8 py-4 border-2 border-gray-600 text-white rounded-xl font-semibold text-lg hover:border-rose-500 hover:text-rose-400 hover:scale-105 transition-all duration-300 min-w-[200px]">
