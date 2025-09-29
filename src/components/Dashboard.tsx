@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode, Users, X, Phone, AlertTriangle } from 'lucide-react';
 import Leaderboard from './Leaderboard';
 import AllParticipants from './AllParticipants';
+import ChatBot from './ChatBot';
 
 interface UserData {
   name: string;
@@ -1090,6 +1091,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+      
+      {/* ChatBot Component */}
+      <ChatBot />
     </div>
   );
 };
