@@ -194,4 +194,94 @@ Please respond as the TechHack 2025 assistant:
   }
 }
 
+// AI Matchmaking Service
+class AIMatchmakingService {
+  private geminiService: GeminiService;
+
+  constructor() {
+    this.geminiService = geminiService;
+  }
+
+  // Generate smart matchmaking suggestions
+  async generateMatchingSuggestions(userProfile: any, eventParticipants: any[]): Promise<any[]> {
+    try {
+      const prompt = `
+Analyze this user profile and suggest the top 3 most compatible people from the event participants for networking.
+
+User Profile:
+- Name: ${userProfile.name}
+- Interests: ${userProfile.interests?.join(', ') || 'General Technology'}
+- Skills: ${userProfile.skills?.join(', ') || 'Software Development'}
+- LinkedIn: ${userProfile.linkedinUsername || 'Not provided'}
+- Looking for: ${userProfile.lookingFor || 'Networking and collaboration opportunities'}
+
+Event Participants:
+${eventParticipants.map((p, i) => `${i+1}. ${p.name} - Interests: ${p.interests?.join(', ') || 'Tech'} - Skills: ${p.skills?.join(', ') || 'Development'} - LinkedIn: ${p.linkedinUsername || 'N/A'}`).join('\n')}
+
+Provide suggestions in this exact JSON format:
+[
+  {
+    "name": "Person Name",
+    "matchReason": "Short reason for the match (max 50 chars)",
+    "commonInterests": ["interest1", "interest2"],
+    "suggestionType": "collaboration|mentorship|networking",
+    "confidenceScore": 85
+  }
+]
+
+Only return valid JSON array with max 3 suggestions.`;
+
+      const response = await this.geminiService.generateResponse(prompt);
+      
+      try {
+        // Clean response and parse JSON
+        const cleanResponse = response.replace(/```json\n?|```\n?/g, '').trim();
+        const suggestions = JSON.parse(cleanResponse);
+        
+        return Array.isArray(suggestions) ? suggestions.slice(0, 3) : [];
+      } catch (parseError) {
+        console.error('Failed to parse AI suggestions:', parseError);
+        return this.getFallbackSuggestions(eventParticipants);
+      }
+    } catch (error) {
+      console.error('AI matchmaking error:', error);
+      return this.getFallbackSuggestions(eventParticipants);
+    }
+  }
+
+  // Fallback suggestions when AI fails
+  private getFallbackSuggestions(participants: any[]): any[] {
+    const shuffled = [...participants].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3).map(p => ({
+      name: p.name,
+      matchReason: "Recommended for networking",
+      commonInterests: ["Technology"],
+      suggestionType: "networking",
+      confidenceScore: 75
+    }));
+  }
+
+  // Generate personalized connection message
+  async generateConnectionMessage(userProfile: any, targetPerson: any, matchReason: string): Promise<string> {
+    try {
+      const prompt = `Generate a personalized LinkedIn connection message (max 100 characters) from ${userProfile.name} to ${targetPerson.name}. 
+
+Context: ${matchReason}
+User interests: ${userProfile.interests?.join(', ') || 'Technology'}
+Target interests: ${targetPerson.interests?.join(', ') || 'Technology'}
+
+Message should be professional, friendly, and mention the event. Only return the message text.`;
+
+      const message = await this.geminiService.generateResponse(prompt);
+      return message.trim().replace(/["']/g, '');
+    } catch (error) {
+      return `Hi ${targetPerson.name}! I noticed we share similar interests at this event. Would love to connect!`;
+    }
+  }
+}
+
+const geminiService = new GeminiService();
+const aiMatchmakingService = new AIMatchmakingService();
+
 export default GeminiService;
+export { geminiService, aiMatchmakingService };

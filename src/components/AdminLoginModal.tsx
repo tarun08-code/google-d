@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Shield, Eye, EyeOff, UserPlus, Phone } from 'lucide-react';
+import { corsApiClient } from '../services/CorsApiClient';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -8,7 +9,7 @@ interface AdminLoginModalProps {
 }
 
 interface AdminCredentials {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -20,7 +21,7 @@ interface AdminSignupData {
 }
 
 const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [credentials, setCredentials] = useState<AdminCredentials>({ username: '', password: '' });
+  const [credentials, setCredentials] = useState<AdminCredentials>({ email: '', password: '' });
   const [signupData, setSignupData] = useState<AdminSignupData>({ 
     name: '', 
     email: '', 
@@ -32,31 +33,46 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSu
   const [isLoading, setIsLoading] = useState(false);
   const [isSignupMode, setIsSignupMode] = useState(false);
 
-  // Demo admin credentials
-  const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    password: 'admin123'
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Use dummy admin credentials for testing
+      console.log('Admin login attempt:', credentials.email);
+      
+      // Mock admin credentials
+      const validAdminEmails = ['admin@eventhub.com', 'admin@test.com', 'test@admin.com'];
+      const validPassword = 'admin123';
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (validAdminEmails.includes(credentials.email.toLowerCase()) && 
+          credentials.password === validPassword) {
+        
+        // Store mock authentication data
+        localStorage.setItem('isAdminLoggedIn', 'true');
+        localStorage.setItem('adminToken', 'mock-admin-token-' + Date.now());
+        localStorage.setItem('tokenType', 'Bearer');
+        localStorage.setItem('adminLoginTime', new Date().toISOString());
+        localStorage.setItem('adminEmail', credentials.email);
+        
+        console.log('✅ Admin login successful (mock)');
+        onSuccess();
+        onClose();
+        
+      } else {
+        setError('Invalid admin credentials. Try admin@eventhub.com / admin123');
+      }
 
-    if (credentials.username === ADMIN_CREDENTIALS.username && 
-        credentials.password === ADMIN_CREDENTIALS.password) {
-      localStorage.setItem('isAdminLoggedIn', 'true');
-      localStorage.setItem('adminLoginTime', new Date().toISOString());
-      onSuccess();
-      onClose();
-    } else {
-      setError('Invalid credentials. Please try again.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -65,31 +81,42 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-      const response = await fetch(`${baseUrl}/users/signup/admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(signupData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Signup failed');
+      // Always try proxy route first to avoid CORS issues
+      let response = await corsApiClient.post('/api/users/signup/admin', signupData);
+      
+      // If proxy fails, try direct API as fallback
+      if (!response.success && response.error?.includes('Proxy connection failed')) {
+        console.log('Proxy failed, trying direct API call:', response.error);
+        try {
+          response = await corsApiClient.post('/users/signup/admin', signupData);
+        } catch (directError) {
+          console.log('Direct API also failed:', directError);
+          // Keep the proxy error response
+        }
       }
 
-      const data = await response.json();
+      if (!response.success) {
+        throw new Error(response.error || 'Signup failed');
+      }
+
+      const data = response.data as any;
       
       // Store the token and admin status
-      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminToken', data?.token || '');
       localStorage.setItem('isAdminLoggedIn', 'true');
       localStorage.setItem('adminLoginTime', new Date().toISOString());
       
       onSuccess();
       onClose();
     } catch (error: any) {
-      setError(error.message || 'Signup failed. Please try again.');
+      console.error('Admin signup error:', error);
+      
+      // Handle CORS-specific errors
+      if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
+        setError('Connection failed. Please check if the server allows requests from this domain.');
+      } else {
+        setError(error.message || 'Signup failed. Please try again.');
+      }
     }
 
     setIsLoading(false);
@@ -210,15 +237,15 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSu
                 // Login fields
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                     <input
-                      type="text"
-                      name="username"
-                      value={credentials.username}
+                      type="email"
+                      name="email"
+                      value={credentials.email}
                       onChange={handleLoginInputChange}
                       required
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#E63946]/50 transition-colors"
-                      placeholder="Enter admin username"
+                      placeholder="Enter admin email"
                     />
                   </div>
 
@@ -280,7 +307,7 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSu
                 onClick={() => {
                   setIsSignupMode(!isSignupMode);
                   setError('');
-                  setCredentials({ username: '', password: '' });
+                  setCredentials({ email: '', password: '' });
                   setSignupData({ name: '', email: '', phoneNumber: '', password: '' });
                 }}
                 className="text-sm text-gray-400 hover:text-[#E63946] transition-colors"

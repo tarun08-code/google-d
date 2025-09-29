@@ -1,6 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, Clock, MapPin, Users, Edit2, Trash2, X } from 'lucide-react';
 import EventDashboard from './EventDashboard';
+import { corsApiClient } from '../services/CorsApiClient';
+
+interface EventCreateResponse {
+  message: string;
+}
+
+interface ApiEvent {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  maxParticipants: number;
+  categoryName: string;
+  registeredCount: number;
+}
 
 interface Event {
   id: string;
@@ -69,6 +86,10 @@ const EventManagement: React.FC = () => {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [apiError, setApiError] = useState<string>('');
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [hasLoadedFromAPI, setHasLoadedFromAPI] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -80,6 +101,75 @@ const EventManagement: React.FC = () => {
     customCategory: ''
   });
 
+  // Fetch events from API
+  const fetchEventsFromAPI = async () => {
+    setIsLoadingEvents(true);
+    setApiError('');
+    
+    try {
+      // Get authentication token
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        setApiError('Authentication required. Please log in to view events.');
+        setIsLoadingEvents(false);
+        return;
+      }
+
+      // Always try proxy route first to avoid CORS issues
+      let response = await corsApiClient.get<ApiEvent[]>('/api/events/with-registration-count', { token });
+      
+      // If proxy fails, try direct API as fallback
+      if (!response.success && response.error?.includes('Proxy connection failed')) {
+        console.log('Proxy failed, trying direct API call:', response.error);
+        try {
+          response = await corsApiClient.get<ApiEvent[]>('/events/with-registration-count', { token });
+        } catch (directError) {
+          console.log('Direct API also failed:', directError);
+          // Keep the proxy error response
+        }
+      }
+
+      if (response.success && response.data) {
+        // Transform API events to local Event format
+        const transformedEvents: Event[] = response.data.map((apiEvent: ApiEvent) => ({
+          id: apiEvent.id.toString(),
+          title: apiEvent.title,
+          description: apiEvent.description,
+          date: apiEvent.date,
+          time: apiEvent.time.substring(0, 5), // Convert "09:00:00" to "09:00"
+          location: apiEvent.location,
+          maxParticipants: apiEvent.maxParticipants,
+          currentParticipants: apiEvent.registeredCount,
+          category: apiEvent.categoryName,
+          status: 'upcoming' as const // Default status, could be enhanced with API data
+        }));
+        
+        setEvents(transformedEvents);
+        setHasLoadedFromAPI(true);
+        console.log('Successfully loaded', transformedEvents.length, 'events from API');
+      } else {
+        setApiError(response.error || 'Failed to fetch events');
+      }
+    } catch (error: any) {
+      console.error('Events fetch error:', error);
+      if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
+        setApiError('Connection failed. Please check if the server allows requests from this domain.');
+      } else if (error.response?.status === 401) {
+        setApiError('Authentication failed. Please log in again.');
+      } else {
+        setApiError(error.message || 'Failed to fetch events. Please try again.');
+      }
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+
+  // Load events when component mounts
+  useEffect(() => {
+    fetchEventsFromAPI();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -88,8 +178,9 @@ const EventManagement: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setApiError('');
     
     const finalCategory = formData.category === 'other' ? formData.customCategory : formData.category;
     const { customCategory, ...eventDataWithoutCustom } = formData;
@@ -99,7 +190,7 @@ const EventManagement: React.FC = () => {
     };
 
     if (editingEvent) {
-      // Update existing event
+      // Update existing event (local only for now)
       setEvents(prev => prev.map(event => 
         event.id === editingEvent.id 
           ? { ...event, ...eventData, currentParticipants: event.currentParticipants }
@@ -107,27 +198,74 @@ const EventManagement: React.FC = () => {
       ));
       setEditingEvent(null);
     } else {
-      // Create new event
-      const newEvent: Event = {
-        id: Date.now().toString(),
-        ...eventData,
-        currentParticipants: 0,
-        status: 'upcoming'
-      };
-      setEvents(prev => [...prev, newEvent]);
+      // Create new event via API
+      setIsCreatingEvent(true);
+      
+      try {
+        // Prepare API payload matching the expected format
+        const apiPayload = {
+          title: eventData.title,
+          description: eventData.description,
+          date: eventData.date, // Format: "2025-12-15"
+          time: eventData.time + ':00', // Convert "09:00" to "09:00:00"
+          location: eventData.location,
+          maxParticipants: eventData.maxParticipants,
+          categoryName: finalCategory
+        };
+
+        // Always try proxy route first to avoid CORS issues
+        let response = await corsApiClient.post<EventCreateResponse>('/api/events', apiPayload);
+        
+        // If proxy fails, try direct API as fallback
+        if (!response.success && response.error?.includes('Proxy connection failed')) {
+          console.log('Proxy failed, trying direct API call:', response.error);
+          try {
+            response = await corsApiClient.post<EventCreateResponse>('/events', apiPayload);
+          } catch (directError) {
+            console.log('Direct API also failed:', directError);
+            // Keep the proxy error response
+          }
+        }
+
+        if (response.success && response.data) {
+          console.log('Event created successfully:', response.data.message);
+          
+          // Add to local state with generated ID
+          const newEvent: Event = {
+            id: Date.now().toString(),
+            ...eventData,
+            category: finalCategory,
+            currentParticipants: 0,
+            status: 'upcoming'
+          };
+          setEvents(prev => [...prev, newEvent]);
+          
+          // Reset form
+          setFormData({
+            title: '',
+            description: '',
+            date: '',
+            time: '',
+            location: '',
+            maxParticipants: 10,
+            category: 'workshop',
+            customCategory: ''
+          });
+          setShowCreateForm(false);
+        } else {
+          setApiError(response.error || 'Failed to create event');
+        }
+      } catch (error: any) {
+        console.error('Event creation error:', error);
+        if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
+          setApiError('Connection failed. Please check if the server allows requests from this domain.');
+        } else {
+          setApiError(error.message || 'Failed to create event. Please try again.');
+        }
+      } finally {
+        setIsCreatingEvent(false);
+      }
     }
-    
-    setFormData({
-      title: '',
-      description: '',
-      date: '',
-      time: '',
-      location: '',
-      maxParticipants: 10,
-      category: 'workshop',
-      customCategory: ''
-    });
-    setShowCreateForm(false);
   };
 
   const handleEdit = (event: Event) => {
@@ -198,14 +336,82 @@ const EventManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Event Management</h2>
-        <p className="text-gray-400">Create and manage hackathon events</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Event Management</h2>
+          <p className="text-gray-400">
+            Create and manage hackathon events
+            {hasLoadedFromAPI && (
+              <span className="ml-2 text-green-400">• Synced with server</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={fetchEventsFromAPI}
+            disabled={isLoadingEvents}
+            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoadingEvents ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+            ) : (
+              <Calendar size={16} className="mr-2" />
+            )}
+            {isLoadingEvents ? 'Loading...' : 'Refresh Events'}
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-[#E63946] hover:bg-[#C5303E] text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
+          >
+            <Plus size={20} className="mr-2" />
+            Create New Event
+          </button>
+        </div>
       </div>
+
+      {/* API Error Display */}
+      {apiError && !showCreateForm && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-red-400">{apiError}</p>
+            <button
+              onClick={() => setApiError('')}
+              className="text-red-400 hover:text-red-300 p-1"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
+        {/* Loading State */}
+        {isLoadingEvents && !hasLoadedFromAPI && (
+          <div className="col-span-full flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-[#E63946]/30 border-t-[#E63946] rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading events from server...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Empty State */}
+        {!isLoadingEvents && events.length === 0 && hasLoadedFromAPI && (
+          <div className="col-span-full text-center py-12">
+            <Calendar size={48} className="text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 mb-4">No events found</p>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="text-[#E63946] hover:text-[#C5303E] font-medium"
+            >
+              Create your first event
+            </button>
+          </div>
+        )}
+        
+        {/* Event Cards */}
+        {!isLoadingEvents && events.map((event) => (
           <div 
             key={event.id} 
             className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6 hover:border-gray-700 hover:border-[#E63946]/50 transition-all cursor-pointer group"
@@ -271,7 +477,8 @@ const EventManagement: React.FC = () => {
           </div>
         ))}
 
-        {/* Create Event Card */}
+        {/* Create Event Card - Only show if there are existing events */}
+        {!isLoadingEvents && events.length > 0 && (
         <div 
           onClick={() => setShowCreateForm(true)}
           className="bg-gray-900/30 backdrop-blur-md border border-gray-800 border-dashed rounded-xl p-6 hover:border-[#E63946]/50 hover:bg-gray-900/50 transition-all cursor-pointer flex items-center justify-center min-h-[280px]"
@@ -284,6 +491,7 @@ const EventManagement: React.FC = () => {
             <p className="text-gray-400 text-sm">Add a new event to the hackathon schedule</p>
           </div>
         </div>
+        )}
       </div>
 
       {/* Create/Edit Event Modal */}
@@ -435,12 +643,20 @@ const EventManagement: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Error Display */}
+                {apiError && (
+                  <div className="col-span-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <p className="text-red-400 text-sm">{apiError}</p>
+                  </div>
+                )}
+
                 <div className="flex space-x-3 pt-4 col-span-2">
                   <button
                     type="button"
                     onClick={() => {
                       setShowCreateForm(false);
                       setEditingEvent(null);
+                      setApiError('');
                       setFormData({
                         title: '',
                         description: '',
@@ -452,15 +668,24 @@ const EventManagement: React.FC = () => {
                         customCategory: ''
                       });
                     }}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    disabled={isCreatingEvent}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-[#E63946] hover:bg-[#C5303E] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    disabled={isCreatingEvent}
+                    className="flex-1 bg-[#E63946] hover:bg-[#C5303E] text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {editingEvent ? 'Update Event' : 'Create Event'}
+                    {isCreatingEvent ? (
+                      <div className="flex items-center justify-center">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        Creating...
+                      </div>
+                    ) : (
+                      editingEvent ? 'Update Event' : 'Create Event'
+                    )}
                   </button>
                 </div>
               </form>
