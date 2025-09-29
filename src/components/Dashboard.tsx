@@ -3,6 +3,8 @@ import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode, Users, X
 import Leaderboard from './Leaderboard';
 import AllParticipants from './AllParticipants';
 import ChatBot from './ChatBot';
+import UserQRCode from './UserQRCode';
+// EventManagement import removed - not used in this component
 
 interface UserData {
   name: string;
@@ -45,6 +47,7 @@ const Dashboard: React.FC = () => {
   const [followingList, setFollowingList] = useState<string[]>([]);
   const [currentView, setCurrentView] = useState<'dashboard' | 'allParticipants'>('dashboard');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const [participantLocations, setParticipantLocations] = useState<ParticipantLocation[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [eventMaps, setEventMaps] = useState<EventMap[]>(() => {
@@ -52,6 +55,69 @@ const Dashboard: React.FC = () => {
     return savedMaps ? JSON.parse(savedMaps) : [];
   });
 
+  // Helper functions
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'current':
+        return 'bg-[#E63946]';
+      case 'upcoming':
+        return 'bg-gray-400';
+      default:
+        return 'bg-gray-400';
+    }
+  };
+
+  const getStatusIcon = (type: string) => {
+    const iconSize = 12; // Smaller for mobile
+    const smIconSize = 16; // Larger for desktop
+
+    switch (type) {
+      case 'registration':
+        return (
+          <>
+            <User size={iconSize} className="text-white sm:hidden" />
+            <User size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+      case 'ceremony':
+        return (
+          <>
+            <Calendar size={iconSize} className="text-white sm:hidden" />
+            <Calendar size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+      case 'hacking':
+        return (
+          <>
+            <Clock size={iconSize} className="text-white sm:hidden" />
+            <Clock size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+      case 'networking':
+        return (
+          <>
+            <Linkedin size={iconSize} className="text-white sm:hidden" />
+            <Linkedin size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+      case 'presentation':
+        return (
+          <>
+            <QrCode size={iconSize} className="text-white sm:hidden" />
+            <QrCode size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+      default:
+        return (
+          <>
+            <Clock size={iconSize} className="text-white sm:hidden" />
+            <Clock size={smIconSize} className="text-white hidden sm:block" />
+          </>
+        );
+    }
+  };
 
   const timelineEvents: TimelineEvent[] = [
     {
@@ -224,112 +290,108 @@ const Dashboard: React.FC = () => {
 
 
 
-  const renderEventContent = () => (
-    <EventManagement />
-  );
+  // Removed unused render functions - these are not being used in the component
 
-  const renderBookingsContent = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">My Bookings</h2>
-      <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6">
-        <div className="space-y-4">
-          <div className="bg-gray-800/50 rounded-lg p-4 border-l-4 border-[#E63946]">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-white font-medium">TechHack 2025 Registration</h4>
-                <p className="text-gray-400 text-sm">March 15-17, 2025</p>
-                <p className="text-gray-400 text-sm">Registration ID: #TH2025-001847</p>
-              </div>
-              <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">Confirmed</span>
-            </div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-4 border-l-4 border-blue-500">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-white font-medium">Workshop: AI/ML Fundamentals</h4>
-                <p className="text-gray-400 text-sm">March 16, 2025 - 2:00 PM</p>
-                <p className="text-gray-400 text-sm">Room: Workshop A</p>
-              </div>
-              <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">Pending</span>
-            </div>
-          </div>
-          <div className="bg-gray-800/50 rounded-lg p-4 border-l-4 border-purple-500">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-white font-medium">Mentorship Session</h4>
-                <p className="text-gray-400 text-sm">March 16, 2025 - 4:00 PM</p>
-                <p className="text-gray-400 text-sm">Mentor: Sarah Johnson - Tech Lead @ Google</p>
-              </div>
-              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">Scheduled</span>
-            </div>
-          </div>
+  // Removed unused renderSupportContent function
+
+  // Main dashboard content is rendered directly in the return statement below
+  // (removed unused mainDashboardContent variable)
+  
+  // Component return starts here
+  if (currentView === 'allParticipants') {
+    return <AllParticipants onFollow={handleFollow} onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <p className="text-gray-400">Please wait while we load your dashboard.</p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const renderSupportContent = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Help & Support</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <Phone className="w-5 h-5 text-[#E63946] mr-2" />
-            Emergency Contacts
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-white font-medium">Event Helpdesk</h4>
-              <p className="text-gray-400">+1 (555) 123-4567</p>
-              <p className="text-gray-400 text-sm">Available 24/7 during event</p>
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-black/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center">
+              <h1 className="text-lg sm:text-2xl font-bold text-[#E63946]">HackEvent</h1>
             </div>
-            <div>
-              <h4 className="text-white font-medium">Technical Support</h4>
-              <p className="text-gray-400">+1 (555) 987-6543</p>
-              <p className="text-gray-400 text-sm">Wi-Fi, equipment, technical issues</p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium">Medical Emergency</h4>
-              <p className="text-gray-400">+1 (911) or On-site Medical Team</p>
-              <p className="text-gray-400 text-sm">Located at Ground Floor Reception</p>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <button
+                onClick={() => setShowQRModal(true)}
+                className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
+                title="Show QR Code"
+              >
+                <QrCode size={18} className="sm:hidden" />
+                <QrCode size={20} className="hidden sm:block" />
+              </button>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-800/50 rounded-lg p-1 transition-colors"
+              >
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#E63946] rounded-full flex items-center justify-center">
+                  <User size={12} className="text-white sm:hidden" />
+                  <User size={16} className="text-white hidden sm:block" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-300 hidden xs:inline">{userData?.name}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
+              >
+                <LogOut size={18} className="sm:hidden" />
+                <LogOut size={20} className="hidden sm:block" />
+              </button>
             </div>
           </div>
         </div>
-        <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <HelpCircle className="w-5 h-5 text-[#E63946] mr-2" />
-            FAQ & Resources
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-white font-medium">Wi-Fi Access</h4>
-              <p className="text-gray-400 text-sm">Network: TechHack2025</p>
-              <p className="text-gray-400 text-sm">Password: TechHack2025</p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium">Food & Refreshments</h4>
-              <p className="text-gray-400 text-sm">Food court open 24/7 on 2nd floor</p>
-              <p className="text-gray-400 text-sm">Coffee stations on all floors</p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium">Parking</h4>
-              <p className="text-gray-400 text-sm">Free parking in Building A garage</p>
-              <p className="text-gray-400 text-sm">Entrance on Mission Street</p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium">Presentation Guidelines</h4>
-              <p className="text-gray-400 text-sm">5 minutes presentation + 2 minutes Q&A</p>
-              <p className="text-gray-400 text-sm">Slides due by 1:00 PM on Day 3</p>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
+          {/* Event Info */}
+          <div className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-start space-x-3 sm:space-x-4 mb-4 sm:mb-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#E63946] to-[#C5303E] rounded-xl flex items-center justify-center shadow-lg">
+                  <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">TechHack 2025</h2>
+                  <div className="space-y-1 text-xs sm:text-sm text-gray-400">
+                    <div className="flex items-center">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>March 15-17, 2025</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>48 Hours</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>Tech Innovation Center, San Francisco</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowQRModal(true)}
+                className="bg-gray-800/50 border border-gray-700 hover:border-[#E63946]/50 rounded-lg p-3 sm:p-4 transition-all group"
+              >
+                <QrCode className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-[#E63946] transition-colors" />
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
 
-  const renderMainDashboard = () => (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
         {/* Event Ticket */}
         <div className="lg:col-span-2">
           <div className="bg-gradient-to-br from-gray-900 to-black border border-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 relative overflow-hidden">
@@ -604,71 +666,123 @@ const Dashboard: React.FC = () => {
       <div className="mt-6 sm:mt-8">
         <Leaderboard onFollow={handleFollow} onViewAll={handleViewAllParticipants} />
       </div>
-    </>
+        </div>
+      </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Profile Content */}
+            <div className="p-8 pt-12">
+              {/* Profile Header */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#E63946] to-[#C5303E] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <User size={40} className="text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-1">{userData?.name}</h2>
+                <p className="text-gray-400 text-sm">{userData?.email}</p>
+              </div>
+
+              {/* Profile Details */}
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="flex items-center text-gray-300">
+                    <Mail className="w-4 h-4 mr-3 text-gray-400" />
+                    <span className="text-sm">Email</span>
+                  </div>
+                  <span className="text-white text-sm font-medium">{userData?.email}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="flex items-center text-gray-300">
+                    <Linkedin className="w-4 h-4 mr-3 text-gray-400" />
+                    <span className="text-sm">LinkedIn</span>
+                  </div>
+                  {userData?.linkedinUrl ? (
+                    <a 
+                      href={userData.linkedinUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#E63946] hover:text-[#C5303E] text-sm font-medium transition-colors"
+                    >
+                      View Profile
+                    </a>
+                  ) : (
+                    <span className="text-gray-500 text-sm">Not provided</span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <div className="flex items-center text-gray-300">
+                    <Calendar className="w-4 h-4 mr-3 text-gray-400" />
+                    <span className="text-sm">Registration Date</span>
+                  </div>
+                  <span className="text-white text-sm font-medium">{userData?.registrationDate}</span>
+                </div>
+              </div>
+
+              {/* Emergency Contact */}
+              <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-4 mb-6">
+                <h4 className="text-[#E63946] font-semibold mb-3 flex items-center">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Need Help?
+                </h4>
+                <button className="w-full bg-[#E63946] hover:bg-[#C5303E] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center">
+                  <Phone className="w-4 h-4 mr-2" />
+                  Emergency Contact
+                </button>
+                <p className="text-[#E63946] text-xs text-center mt-2">
+                  24/7 Support: +1 (555) 123-4567
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex space-x-3">
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* QR Code Modal */}
+      {userData && (
+        <UserQRCode 
+          userData={{
+            name: userData.name,
+            email: userData.email,
+            registrationDate: userData.registrationDate
+          }}
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
+      
+      {/* ChatBot Component */}
+      <ChatBot />
+    </div>
   );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'current':
-        return 'bg-[#E63946]';
-      case 'upcoming':
-        return 'bg-gray-400';
-      default:
-        return 'bg-gray-400';
-    }
-  };
-
-  const getStatusIcon = (type: string) => {
-    const iconSize = 12; // Smaller for mobile
-    const smIconSize = 16; // Larger for desktop
-
-    switch (type) {
-      case 'registration':
-        return (
-          <>
-            <User size={iconSize} className="text-white sm:hidden" />
-            <User size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-      case 'ceremony':
-        return (
-          <>
-            <Calendar size={iconSize} className="text-white sm:hidden" />
-            <Calendar size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-      case 'hacking':
-        return (
-          <>
-            <Clock size={iconSize} className="text-white sm:hidden" />
-            <Clock size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-      case 'networking':
-        return (
-          <>
-            <Linkedin size={iconSize} className="text-white sm:hidden" />
-            <Linkedin size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-      case 'presentation':
-        return (
-          <>
-            <QrCode size={iconSize} className="text-white sm:hidden" />
-            <QrCode size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-      default:
-        return (
-          <>
-            <Clock size={iconSize} className="text-white sm:hidden" />
-            <Clock size={smIconSize} className="text-white hidden sm:block" />
-          </>
-        );
-    }
-  };
 
   if (!userData) {
     return (
@@ -701,6 +815,14 @@ const Dashboard: React.FC = () => {
               <h1 className="text-lg sm:text-2xl font-bold text-[#E63946]">HackEvent</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
+              <button
+                onClick={() => setShowQRModal(true)}
+                className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
+                title="Show QR Code"
+              >
+                <QrCode size={18} className="sm:hidden" />
+                <QrCode size={20} className="hidden sm:block" />
+              </button>
               <button
                 onClick={() => setShowProfileModal(true)}
                 className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-800/50 rounded-lg p-1 transition-colors"
@@ -751,18 +873,21 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 sm:p-4">
-                <div className="grid grid-cols-4 gap-1 mb-2">
+              <button 
+                onClick={() => setShowQRModal(true)}
+                className="bg-gray-800/50 border border-gray-700 hover:border-[#E63946]/50 rounded-lg p-3 sm:p-4 transition-all group"
+              >
+                <div className="grid grid-cols-4 gap-1 mb-2 group-hover:opacity-80">
                   {Array.from({ length: 16 }, (_, i) => (
-                    <div key={i} className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-600 rounded-sm" />
+                    <div key={i} className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-600 rounded-sm group-hover:bg-[#E63946]/70 transition-colors" />
                   ))}
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-400 mb-1">Registration ID</div>
                   <div className="text-xs sm:text-sm font-mono text-[#E63946]">#TH2025-001847</div>
-                  <div className="text-xs text-gray-500 mt-1">Scan this QR code for event check-in</div>
+                  <div className="text-xs text-gray-500 mt-1 group-hover:text-[#E63946] transition-colors">Click to view QR code</div>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -1015,7 +1140,7 @@ const Dashboard: React.FC = () => {
                   <div className="w-20 h-20 bg-[#E63946] rounded-full flex items-center justify-center mx-auto mb-3">
                     <User size={32} className="text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{userData.name}</h3>
+                  <h3 className="text-lg font-semibold text-white">{userData?.name}</h3>
                   <p className="text-gray-400 text-sm">Event Participant</p>
                 </div>
 
@@ -1026,7 +1151,7 @@ const Dashboard: React.FC = () => {
                       <Mail className="w-4 h-4 text-[#E63946] mr-3" />
                       <span className="text-gray-400 text-sm">Email</span>
                     </div>
-                    <p className="text-white text-sm">{userData.email}</p>
+                    <p className="text-white text-sm">{userData?.email}</p>
                   </div>
 
                   <div className="bg-gray-800/50 rounded-lg p-4">
@@ -1034,14 +1159,18 @@ const Dashboard: React.FC = () => {
                       <Linkedin className="w-4 h-4 text-[#E63946] mr-3" />
                       <span className="text-gray-400 text-sm">Professional Profile</span>
                     </div>
-                    <a
-                      href={userData.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 transition-colors text-sm underline"
-                    >
-                      View LinkedIn Profile
-                    </a>
+                    {userData?.linkedinUrl ? (
+                      <a
+                        href={userData?.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 transition-colors text-sm underline"
+                      >
+                        View LinkedIn Profile
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 text-sm">Not provided</span>
+                    )}
                   </div>
 
                   <div className="bg-gray-800/50 rounded-lg p-4">
@@ -1091,9 +1220,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
-      
-      {/* ChatBot Component */}
-      <ChatBot />
     </div>
   );
 };

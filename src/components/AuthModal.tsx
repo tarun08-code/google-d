@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Lock, Linkedin, Eye, EyeOff } from 'lucide-react';
+import { X, User, Mail, Lock, Linkedin, Eye, EyeOff, Phone } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,7 +17,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     email: '',
     password: '',
     confirmPassword: '',
-    linkedinUrl: ''
+    phoneNumber: '',
+    linkedinUsername: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,30 +29,63 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (mode === 'register') {
       if (formData.password !== formData.confirmPassword) {
         alert('Passwords do not match!');
         return;
       }
-      if (!formData.linkedinUrl) {
-        alert('LinkedIn Profile URL is required!');
+      if (!formData.linkedinUsername) {
+        alert('LinkedIn username is required!');
         return;
       }
-      // Handle registration logic here
-      console.log('Registration data:', formData);
-      // Store user data in localStorage for demo
-      localStorage.setItem('userData', JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        linkedinUrl: formData.linkedinUrl,
-        registrationDate: new Date().toISOString(),
-        following: []
-      }));
-      localStorage.setItem('isLoggedIn', 'true');
-      onAuthSuccess?.();
-      window.location.replace('/dashboard');
+      if (!formData.phoneNumber) {
+        alert('Phone number is required!');
+        return;
+      }
+      
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        const response = await fetch(`${baseUrl}/users/signup/member`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phoneNumber: formData.phoneNumber,
+            password: formData.password,
+            linkedinUsername: formData.linkedinUsername
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Registration failed');
+        }
+
+        const data = await response.json();
+        
+        // Store the token and user data
+        localStorage.setItem('memberToken', data.token);
+        localStorage.setItem('userData', JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          linkedinUrl: `https://linkedin.com/in/${formData.linkedinUsername}`,
+          registrationDate: new Date().toISOString(),
+          following: []
+        }));
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        onAuthSuccess?.();
+        window.location.replace('/dashboard');
+      } catch (error: any) {
+        alert(error.message || 'Registration failed. Please try again.');
+        return;
+      }
     } else {
       // Handle login logic here
       console.log('Login data:', { email: formData.email, password: formData.password });
@@ -78,7 +112,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       email: '',
       password: '',
       confirmPassword: '',
-      linkedinUrl: ''
+      phoneNumber: '',
+      linkedinUsername: ''
     });
   };
 
@@ -183,12 +218,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </div>
 
                   <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={20} />
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      placeholder="Phone Number *"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-black border border-white rounded-lg text-white placeholder-white focus:outline-none focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]"
+                    />
+                  </div>
+
+                  <div className="relative">
                     <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={20} />
                     <input
-                      type="url"
-                      name="linkedinUrl"
-                      placeholder="LinkedIn Profile URL *"
-                      value={formData.linkedinUrl}
+                      type="text"
+                      name="linkedinUsername"
+                      placeholder="LinkedIn Username *"
+                      value={formData.linkedinUsername}
                       onChange={handleInputChange}
                       required
                       className="w-full pl-10 pr-4 py-3 bg-black border border-white rounded-lg text-white placeholder-white focus:outline-none focus:border-[#E63946] focus:ring-1 focus:ring-[#E63946]"
