@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import AuthModal from './AuthModal';
+import AdminLoginModal from './AdminLoginModal';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  const handleAdminLogin = () => {
+    setIsAdminModalOpen(true);
+  };
+
+  const handleAdminSuccess = () => {
+    // Navigate to admin panel
+    window.location.href = '/admin';
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,7 +73,10 @@ const Navbar: React.FC = () => {
             >
               Login
             </button>
-            <button className="bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-[#E63946]/25">
+            <button 
+              onClick={handleAdminLogin}
+              className="bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-[#E63946]/25"
+            >
               Host an Event
             </button>
           </div>
@@ -104,7 +118,13 @@ const Navbar: React.FC = () => {
               >
                 Login
               </button>
-              <button className="w-full bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] transition-colors">
+              <button 
+                onClick={() => {
+                  handleAdminLogin();
+                  setIsOpen(false);
+                }}
+                className="w-full bg-[#E63946] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#C5303E] transition-colors"
+              >
                 Host an Event
               </button>
             </div>
@@ -117,6 +137,13 @@ const Navbar: React.FC = () => {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authMode}
+      />
+      
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onSuccess={handleAdminSuccess}
       />
     </nav>
   );

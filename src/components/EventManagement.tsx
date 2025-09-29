@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Calendar, Clock, MapPin, Users, Edit2, Trash2, X } from 'lucide-react';
+import EventDashboard from './EventDashboard';
 
 interface Event {
   id: string;
@@ -26,6 +27,7 @@ interface EventFormData {
 }
 
 const EventManagement: React.FC = () => {
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([
     {
       id: '1',
@@ -176,6 +178,24 @@ const EventManagement: React.FC = () => {
     }
   };
 
+  const handleEventClick = (event: Event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleBackToEventList = () => {
+    setSelectedEvent(null);
+  };
+
+  // If an event is selected, show the EventDashboard
+  if (selectedEvent) {
+    return (
+      <EventDashboard 
+        event={selectedEvent} 
+        onBack={handleBackToEventList}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -186,21 +206,34 @@ const EventManagement: React.FC = () => {
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map((event) => (
-          <div key={event.id} className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
+          <div 
+            key={event.id} 
+            className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl p-6 hover:border-gray-700 hover:border-[#E63946]/50 transition-all cursor-pointer group"
+            onClick={() => handleEventClick(event)}
+          >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">{event.title}</h3>
+                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[#E63946] transition-colors">{event.title}</h3>
                 <p className="text-gray-400 text-sm mb-3 line-clamp-2">{event.description}</p>
+                <div className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">
+                  Click to open event dashboard
+                </div>
               </div>
               <div className="flex items-center space-x-2 ml-2">
                 <button
-                  onClick={() => handleEdit(event)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(event);
+                  }}
                   className="text-gray-400 hover:text-white p-1 rounded transition-colors"
                 >
                   <Edit2 size={16} />
                 </button>
                 <button
-                  onClick={() => handleDelete(event.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(event.id);
+                  }}
                   className="text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
                 >
                   <Trash2 size={16} />

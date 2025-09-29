@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode, Users, X, Phone, AlertTriangle, LayoutDashboard, CalendarDays, BookOpen, HelpCircle, Menu } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Mail, Linkedin, LogOut, QrCode, Users, X, Phone, AlertTriangle } from 'lucide-react';
 import Leaderboard from './Leaderboard';
 import AllParticipants from './AllParticipants';
-import EventManagement from './EventManagement';
 
 interface UserData {
   name: string;
@@ -19,6 +18,15 @@ interface TimelineEvent {
   description: string;
   status: 'completed' | 'current' | 'upcoming';
   type: 'registration' | 'ceremony' | 'hacking' | 'networking' | 'presentation';
+}
+
+interface EventMap {
+  id: string;
+  name: string;
+  file: File | null;
+  url: string;
+  description: string;
+  uploadedAt: string;
 }
 
 interface ParticipantLocation {
@@ -38,8 +46,11 @@ const Dashboard: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [participantLocations, setParticipantLocations] = useState<ParticipantLocation[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [activeMenuItem, setActiveMenuItem] = useState<'dashboard' | 'event' | 'bookings' | 'support'>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [eventMaps, setEventMaps] = useState<EventMap[]>(() => {
+    const savedMaps = localStorage.getItem('eventMaps');
+    return savedMaps ? JSON.parse(savedMaps) : [];
+  });
+
 
   const timelineEvents: TimelineEvent[] = [
     {
@@ -91,6 +102,24 @@ const Dashboard: React.FC = () => {
       setUserData(user);
       setFollowingList(user.following || []);
     }
+  }, []);
+
+  // Listen for changes in eventMaps from localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedMaps = localStorage.getItem('eventMaps');
+      if (savedMaps) {
+        setEventMaps(JSON.parse(savedMaps));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
 
     // Get user location
     if (navigator.geolocation) {
@@ -192,20 +221,7 @@ const Dashboard: React.FC = () => {
     window.location.href = '/';
   };
 
-  const renderDashboardContent = () => {
-    switch (activeMenuItem) {
-      case 'dashboard':
-        return renderMainDashboard();
-      case 'event':
-        return renderEventContent();
-      case 'bookings':
-        return renderBookingsContent();
-      case 'support':
-        return renderSupportContent();
-      default:
-        return renderMainDashboard();
-    }
-  };
+
 
   const renderEventContent = () => (
     <EventManagement />
@@ -375,35 +391,44 @@ const Dashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-white">Venue Navigation</h3>
             </div>
 
-            {/* Interactive Map */}
-            <div className="bg-black rounded-lg p-3 sm:p-4 mb-4 relative h-32 sm:h-40">
-              <div className="absolute inset-2 bg-gray-800 rounded"></div>
-              <div className="absolute top-6 left-6 w-3 h-3 bg-[#E63946] rounded-full animate-pulse"></div>
-              <div className="absolute top-12 right-8 w-2 h-2 bg-green-500 rounded-full"></div>
-              <div className="absolute bottom-8 left-12 w-2 h-2 bg-blue-500 rounded-full"></div>
-              <div className="absolute bottom-6 right-6 text-xs text-gray-400">
-                Tech Innovation Center
+            {/* Venue Maps Grid */}
+            {eventMaps.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                {eventMaps.map((map) => (
+                  <div
+                    key={map.id}
+                    className="group cursor-pointer bg-gray-800/50 rounded-lg p-3 border border-gray-700 hover:border-[#E63946]/50 transition-all"
+                    onClick={() => window.open(map.url, '_blank')}
+                  >
+                    {map.file?.type.startsWith('image/') && (
+                      <div className="mb-3">
+                        <img 
+                          src={map.url} 
+                          alt={map.name}
+                          className="w-full h-32 object-cover rounded border border-gray-600 group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-white text-sm group-hover:text-[#E63946] transition-colors">
+                          {map.name}
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          Click to view full size
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-              <div>
-                <div className="font-medium text-white">Main Hall</div>
-                <div className="text-gray-400">Ground Floor</div>
+            ) : (
+              <div className="bg-gray-800/30 rounded-lg p-6 mb-4 text-center border border-gray-700 border-dashed">
+                <MapPin size={32} className="text-gray-600 mx-auto mb-2" />
+                <p className="text-gray-400 text-sm mb-2">No venue maps uploaded yet</p>
+                <p className="text-gray-500 text-xs">Maps can be uploaded by administrators in the event dashboard</p>
               </div>
-              <div>
-                <div className="font-medium text-white">Food Court</div>
-                <div className="text-gray-400">2nd Floor</div>
-              </div>
-              <div>
-                <div className="font-medium text-white">Rest Areas</div>
-                <div className="text-gray-400">All Floors</div>
-              </div>
-              <div>
-                <div className="font-medium text-white">Washrooms</div>
-                <div className="text-gray-400">All Floors</div>
-              </div>
-            </div>
+            )}
 
             <div className="mt-4 p-3 bg-[#E63946]/10 border border-[#E63946]/20 rounded-lg">
               <div className="flex items-center text-[#E63946] text-sm">
@@ -666,128 +691,302 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900/95 backdrop-blur-md border-r border-gray-800 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-          <h1 className="text-xl font-bold text-[#E63946]">HackEvent</h1>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-black/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center">
+              <h1 className="text-lg sm:text-2xl font-bold text-[#E63946]">HackEvent</h1>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-800/50 rounded-lg p-1 transition-colors"
+              >
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#E63946] rounded-full flex items-center justify-center">
+                  <User size={12} className="text-white sm:hidden" />
+                  <User size={16} className="text-white hidden sm:block" />
+                </div>
+                <span className="text-xs sm:text-sm text-gray-300 hidden xs:inline">{userData?.name}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
+              >
+                <LogOut size={18} className="sm:hidden" />
+                <LogOut size={20} className="hidden sm:block" />
+              </button>
+            </div>
+          </div>
         </div>
-        
-        <nav className="mt-6 px-4">
-          <ul className="space-y-2">
-            <li>
-              <button
-                onClick={() => setActiveMenuItem('dashboard')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeMenuItem === 'dashboard' 
-                    ? 'bg-[#E63946]/20 text-[#E63946] border-r-2 border-[#E63946]' 
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                }`}
-              >
-                <LayoutDashboard size={20} />
-                <span className="font-medium">Dashboard</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setActiveMenuItem('event')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeMenuItem === 'event' 
-                    ? 'bg-[#E63946]/20 text-[#E63946] border-r-2 border-[#E63946]' 
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                }`}
-              >
-                <CalendarDays size={20} />
-                <span className="font-medium">Event</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setActiveMenuItem('bookings')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeMenuItem === 'bookings' 
-                    ? 'bg-[#E63946]/20 text-[#E63946] border-r-2 border-[#E63946]' 
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                }`}
-              >
-                <BookOpen size={20} />
-                <span className="font-medium">My Bookings</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setActiveMenuItem('support')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeMenuItem === 'support' 
-                    ? 'bg-[#E63946]/20 text-[#E63946] border-r-2 border-[#E63946]' 
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                }`}
-              >
-                <HelpCircle size={20} />
-                <span className="font-medium">Help & Support</span>
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-0">
-        {/* Header */}
-        <header className="border-b border-gray-800 bg-black/80 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-14 sm:h-16">
-              <div className="flex items-center">
-                <button
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="lg:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors mr-3"
-                >
-                  <Menu size={20} />
-                </button>
-                <h1 className="text-lg sm:text-2xl font-bold text-[#E63946] lg:hidden">HackEvent</h1>
-              </div>
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-800/50 rounded-lg p-1 transition-colors"
-                >
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#E63946] rounded-full flex items-center justify-center">
-                    <User size={12} className="text-white sm:hidden" />
-                    <User size={16} className="text-white hidden sm:block" />
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
+          {/* Event Info */}
+          <div className="bg-gradient-to-r from-gray-900 via-gray-900 to-gray-800 border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6">
+              <div className="flex items-start space-x-3 sm:space-x-4 mb-4 sm:mb-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-[#E63946] to-[#C5303E] rounded-xl flex items-center justify-center shadow-lg">
+                  <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">TechHack 2025</h2>
+                  <div className="space-y-1 text-xs sm:text-sm text-gray-400">
+                    <div className="flex items-center">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>March 15-17, 2025</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>48 Hours</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      <span>Tech Innovation Center, San Francisco</span>
+                    </div>
                   </div>
-                  <span className="text-xs sm:text-sm text-gray-300 hidden xs:inline">{userData.name}</span>
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-400 hover:text-white transition-colors p-1 sm:p-2"
-                >
-                  <LogOut size={18} className="sm:hidden" />
-                  <LogOut size={20} className="hidden sm:block" />
-                </button>
+                </div>
+              </div>
+              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 sm:p-4">
+                <div className="grid grid-cols-4 gap-1 mb-2">
+                  {Array.from({ length: 16 }, (_, i) => (
+                    <div key={i} className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-600 rounded-sm" />
+                  ))}
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-400 mb-1">Registration ID</div>
+                  <div className="text-xs sm:text-sm font-mono text-[#E63946]">#TH2025-001847</div>
+                  <div className="text-xs text-gray-500 mt-1">Scan this QR code for event check-in</div>
+                </div>
               </div>
             </div>
           </div>
-        </header>
 
-        {/* Content Area */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-          {renderDashboardContent()}
+          {/* Event Schedule Timeline */}
+          <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#E63946] mr-2" />
+              Event Schedule
+            </h3>
+            
+            <div className="space-y-3 sm:space-y-4">
+              {timelineEvents.map((event, index) => (
+                <div key={event.id} className="flex items-start space-x-3 sm:space-x-4">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 ${
+                      event.status === 'completed' ? 'bg-green-500 border-green-500' :
+                      event.status === 'current' ? 'bg-[#E63946] border-[#E63946] animate-pulse' :
+                      'bg-transparent border-gray-600'
+                    }`} />
+                    {index < timelineEvents.length - 1 && (
+                      <div className="w-0.5 h-8 sm:h-12 bg-gray-700 mt-2" />
+                    )}
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className={`text-xs sm:text-sm font-medium ${
+                            event.status === 'current' ? 'text-[#E63946]' : 'text-gray-400'
+                          }`}>
+                            {event.time}
+                          </span>
+                          {event.status === 'current' && (
+                            <span className="px-2 py-1 text-xs bg-[#E63946]/20 text-[#E63946] rounded-full border border-[#E63946]/30">
+                              In Progress
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-sm sm:text-base font-medium text-white mb-1">{event.title}</h4>
+                        <p className="text-xs sm:text-sm text-gray-400">{event.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Announcements */}
+            <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#E63946] mr-2" />
+                Announcements
+              </h3>
+
+              <div className="space-y-3">
+                <div className="p-3 bg-[#E63946]/10 border border-[#E63946]/20 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-[#E63946] mb-1">WiFi Information</h4>
+                      <p className="text-xs text-gray-300">Network: HackEvent-Secure | Password: TechHack2025!</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-blue-400 mb-1">Lunch Break</h4>
+                      <p className="text-xs text-gray-300">Food court opens at 12:30 PM - 2:00 PM</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Venue Information */}
+            <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[#E63946] mr-2" />
+                Venue Navigation
+              </h3>
+
+              {/* Mobile Venue Maps */}
+              {eventMaps.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                  {eventMaps.map((map) => (
+                    <div
+                      key={map.id}
+                      className="group cursor-pointer bg-gray-800/50 rounded-lg p-3 border border-gray-700 hover:border-[#E63946]/50 transition-all"
+                      onClick={() => window.open(map.url, '_blank')}
+                    >
+                      {map.file?.type.startsWith('image/') && (
+                        <div className="mb-2">
+                          <img 
+                            src={map.url} 
+                            alt={map.name}
+                            className="w-full h-24 object-cover rounded border border-gray-600 group-hover:scale-105 transition-transform"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-white text-xs group-hover:text-[#E63946] transition-colors">
+                            {map.name}
+                          </div>
+                          <div className="text-gray-400 text-xs">
+                            Tap to view full size
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-800/30 rounded-lg p-4 mb-4 text-center border border-gray-700 border-dashed">
+                  <MapPin size={24} className="text-gray-600 mx-auto mb-2" />
+                  <p className="text-gray-400 text-xs mb-1">No venue maps uploaded yet</p>
+                  <p className="text-gray-500 text-xs">Maps can be uploaded by administrators</p>
+                </div>
+              )}
+
+              <div className="mt-4 p-3 bg-[#E63946]/10 border border-[#E63946]/20 rounded-lg">
+                <div className="flex items-center text-[#E63946] text-sm">
+                  <Clock size={14} className="mr-2" />
+                  <span>Venue opens at 8:00 AM</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Participant Location Map */}
+            <div className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+                <MapPin className="w-5 h-5 text-[#E63946] mr-2" />
+                Live Participant Map
+              </h3>
+
+              {/* Mini Map Container */}
+              <div className="relative bg-gray-800 rounded-lg h-32 sm:h-40 overflow-hidden border border-gray-700">
+                {/* Map Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20">
+                  {/* Grid Pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="grid grid-cols-8 grid-rows-6 h-full">
+                      {Array.from({ length: 48 }, (_, i) => (
+                        <div key={i} className="border border-gray-600"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Location (Red Dot) */}
+                {userLocation && (
+                  <div 
+                    className="absolute w-3 h-3 bg-[#E63946] rounded-full border-2 border-white shadow-lg animate-pulse"
+                    style={{
+                      left: '45%',
+                      top: '60%',
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                      <span className="text-xs bg-[#E63946] text-white px-1 rounded whitespace-nowrap">You</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Participant Locations (Green Dots) */}
+                {participantLocations.map((participant, index) => {
+                  // Calculate position based on mock coordinates
+                  const left = 20 + (index * 15) % 60;
+                  const top = 20 + (index * 10) % 50;
+                  
+                  return (
+                    <div key={participant.id}>
+                      <div 
+                        className={`absolute w-2.5 h-2.5 rounded-full border border-white shadow-md cursor-pointer hover:scale-125 transition-transform group ${
+                          participant.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+                        }`}
+                        style={{
+                          left: `${left}%`,
+                          top: `${top}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      >
+                        {/* Tooltip */}
+                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <div className="font-semibold">{participant.name}</div>
+                          <div className="text-gray-300">{participant.section}</div>
+                          <div className="text-green-400">{participant.lastSeen}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-[#E63946] rounded-full mr-2"></div>
+                    <span className="text-gray-400">You</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-gray-400">Online ({participantLocations.filter(p => p.isOnline).length})</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full mr-2"></div>
+                    <span className="text-gray-400">Offline ({participantLocations.filter(p => !p.isOnline).length})</span>
+                  </div>
+                </div>
+                <span className="text-gray-500">Live</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard */}
+          <div className="mt-6 sm:mt-8">
+            <Leaderboard onFollow={handleFollow} onViewAll={handleViewAllParticipants} />
+          </div>
         </div>
       </div>
-
-      {/* Overlay for mobile sidebar */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
 
       {/* Profile Modal */}
       {showProfileModal && (
