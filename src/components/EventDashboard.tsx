@@ -63,7 +63,7 @@ interface EventDashboardProps {
 }
 
 const EventDashboard: React.FC<EventDashboardProps> = ({ event, onBack }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'maps' | 'resources'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'maps' | 'announcements'>('overview');
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
     {
       id: '1',

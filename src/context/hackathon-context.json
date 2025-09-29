@@ -1,0 +1,143 @@
+{
+  "event": {
+    "name": "kju 2025",
+    "theme": "AI & Machine Learning Innovation",
+    "duration": "1 hours",
+    "dates": "March 15-17, 2025",
+    "location": {
+      "name": "kristujayanti  ",
+      "address": "123 Tech Street, San Francisco, CA 94105",
+      "floors": {
+        "ground_floor": ["Main Hall", "Registration Desk", "Reception"],
+        "second_floor": ["Food Court", "Workshop Rooms A-C"],
+        "third_floor": ["Rest Areas", "Quiet Zones"],
+        "all_floors": ["Washrooms", "Emergency Exits"]
+      }
+    }
+  },
+  "schedule": {
+    "day1": {
+      "date": "March 15, 2025",
+      "events": [
+        {"time": "09:00", "title": "Registration & Check-in", "location": "Main Hall"},
+        {"time": "10:30", "title": "Opening Ceremony", "location": "Main Hall"},
+        {"time": "12:00", "title": "Hacking Begins", "location": "All Areas"},
+        {"time": "13:00", "title": "Lunch", "location": "Food Court"},
+        {"time": "19:00", "title": "Dinner & Networking", "location": "Food Court"},
+        {"time": "21:00", "title": "Night Coding Session", "location": "Main Hall"}
+      ]
+    },
+    "day2": {
+      "date": "March 16, 2025",
+      "events": [
+        {"time": "08:00", "title": "Breakfast", "location": "Food Court"},
+        {"time": "10:00", "title": "Mentor Sessions", "location": "Workshop Rooms"},
+        {"time": "14:00", "title": "AI/ML Workshop", "location": "Workshop Room A"},
+        {"time": "18:00", "title": "Project Check-in", "location": "Main Hall"},
+        {"time": "20:00", "title": "Dinner", "location": "Food Court"}
+      ]
+    },
+    "day3": {
+      "date": "March 17, 2025",
+      "events": [
+        {"time": "09:00", "title": "Final Sprint", "location": "All Areas"},
+        {"time": "12:00", "title": "Lunch", "location": "Food Court"},
+        {"time": "14:00", "title": "Project Submissions", "location": "Main Hall"},
+        {"time": "15:00", "title": "Final Presentations", "location": "Auditorium"},
+        {"time": "17:00", "title": "Judging & Awards", "location": "Main Hall"},
+        {"time": "18:00", "title": "Closing Ceremony", "location": "Main Hall"}
+      ]
+    }
+  },
+  "facilities": {
+    "wifi": {
+      "network": "TechHack2025",
+      "password": "TechHack2025"
+    },
+    "food": {
+      "food_court": "Open 24/7 on 2nd floor",
+      "coffee_stations": "Available on all floors",
+      "dietary_options": ["Vegetarian", "Vegan", "Gluten-free", "Halal"]
+    },
+    "amenities": [
+      "Free parking available",
+      "Power outlets at every seat",
+      "High-speed internet",
+      "Sleeping areas on 3rd floor",
+      "Shower facilities",
+      "Gaming lounge",
+      "3D printers available"
+    ]
+  },
+  "support": {
+    "emergency": "+1 (555) 123-4567",
+    "technical_support": "tech@techhack2025.com",
+    "general_inquiries": "info@techhack2025.com",
+    "mentor_help": "Available 24/7 at mentor stations",
+    "medical": "First aid station on ground floor"
+  },
+  "rules": {
+    "team_size": "1-4 members",
+    "submission_deadline": "March 17, 2025 at 2:00 PM",
+    "presentation_time": "5 minutes per team",
+    "judging_criteria": ["Innovation", "Technical Implementation", "User Experience", "Business Viability"],
+    "prizes": {
+      "first_place": "$10,000",
+      "second_place": "$5,000", 
+      "third_place": "$2,500",
+      "best_ai_implementation": "$1,000",
+      "most_creative": "$1,000"
+    }
+  },
+  "tracks": [
+    {
+      "name": "AI & Machine Learning",
+      "description": "Build intelligent applications using AI/ML technologies",
+      "sponsors": ["Google", "Microsoft", "OpenAI"]
+    },
+    {
+      "name": "Web3 & Blockchain", 
+      "description": "Create decentralized applications and blockchain solutions",
+      "sponsors": ["Ethereum Foundation", "Polygon"]
+    },
+    {
+      "name": "FinTech Innovation",
+      "description": "Develop financial technology solutions",
+      "sponsors": ["Stripe", "Square", "PayPal"]
+    },
+    {
+      "name": "HealthTech",
+      "description": "Build technology solutions for healthcare challenges", 
+      "sponsors": ["Teladoc", "Epic Systems"]
+    }
+  ],
+  "workshops": [
+    {
+      "title": "Introduction to Machine Learning",
+      "time": "March 16, 2:00 PM",
+      "duration": "2 hours",
+      "location": "Workshop Room A",
+      "instructor": "Dr. Sarah Chen, Google AI"
+    },
+    {
+      "title": "Building with React & TypeScript",
+      "time": "March 16, 4:00 PM", 
+      "duration": "1.5 hours",
+      "location": "Workshop Room B",
+      "instructor": "Alex Rodriguez, Meta"
+    },
+    {
+      "title": "API Design Best Practices",
+      "time": "March 16, 7:00 PM",
+      "duration": "1 hour", 
+      "location": "Workshop Room C",
+      "instructor": "Jamie Kim, Stripe"
+    }
+  ],
+  "sponsors": {
+    "platinum": ["Google", "Microsoft", "Amazon"],
+    "gold": ["Meta", "Netflix", "Uber"],
+    "silver": ["Stripe", "Airbnb", "Spotify"],
+    "bronze": ["GitHub", "Figma", "Notion"]
+  }
+}
