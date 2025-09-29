@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Lock, Linkedin, Eye, EyeOff, Phone } from 'lucide-react';
+import { corsApiClient } from '../services/CorsApiClient';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -47,30 +48,36 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       }
       
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-        const response = await fetch(`${baseUrl}/users/signup/member`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phoneNumber: formData.phoneNumber,
-            password: formData.password,
-            linkedinUsername: formData.linkedinUsername
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Registration failed');
+        const memberData = {
+          name: formData.name,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          password: formData.password,
+          linkedinUsername: formData.linkedinUsername
+        };
+        
+        // Always try proxy route first to avoid CORS issues
+        let response = await corsApiClient.post('/api/users/signup/member', memberData);
+        
+        // If proxy fails, try direct API as fallback
+        if (!response.success && response.error?.includes('Proxy connection failed')) {
+          console.log('Proxy failed, trying direct API call:', response.error);
+          try {
+            response = await corsApiClient.post('/users/signup/member', memberData);
+          } catch (directError) {
+            console.log('Direct API also failed:', directError);
+            // Keep the proxy error response
+          }
         }
 
-        const data = await response.json();
+        if (!response.success) {
+          throw new Error(response.error || 'Registration failed');
+        }
+
+        const data = response.data as any;
         
         // Store the token and user data
-        localStorage.setItem('memberToken', data.token);
+        localStorage.setItem('memberToken', data?.token || '');
         localStorage.setItem('userData', JSON.stringify({
           name: formData.name,
           email: formData.email,
@@ -83,7 +90,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         onAuthSuccess?.();
         window.location.replace('/dashboard');
       } catch (error: any) {
-        alert(error.message || 'Registration failed. Please try again.');
+        console.error('Member signup error:', error);
+        
+        // Handle CORS-specific errors
+        if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
+          alert('Connection failed. Please check if the server allows requests from this domain.');
+        } else {
+          alert(error.message || 'Registration failed. Please try again.');
+        }
         return;
       }
     } else {

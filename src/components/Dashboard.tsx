@@ -4,6 +4,8 @@ import Leaderboard from './Leaderboard';
 import AllParticipants from './AllParticipants';
 import ChatBot from './ChatBot';
 import UserQRCode from './UserQRCode';
+import AIMatchmakingToast from './AIMatchmakingToast';
+import { aiMatchmakingManager, MatchSuggestion } from '../services/AIMatchmakingManager';
 // EventManagement import removed - not used in this component
 
 interface UserData {
@@ -46,6 +48,11 @@ const Dashboard: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [followingList, setFollowingList] = useState<string[]>([]);
   const [currentView, setCurrentView] = useState<'dashboard' | 'allParticipants'>('dashboard');
+  
+  // AI Matchmaking states
+  const [currentSuggestion, setCurrentSuggestion] = useState<MatchSuggestion | null>(null);
+  const [showMatchmakingToast, setShowMatchmakingToast] = useState(false);
+  // const [connectionMessage, setConnectionMessage] = useState(''); // Commented out - will be used for future LinkedIn integration
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [participantLocations, setParticipantLocations] = useState<ParticipantLocation[]>([]);
@@ -259,6 +266,69 @@ const Dashboard: React.FC = () => {
 
     setParticipantLocations(mockLocations);
   }, []);
+
+  // AI Matchmaking Logic
+  useEffect(() => {
+    if (!userData) return;
+
+    const startMatchmaking = () => {
+      try {
+        console.log('🤖 AI Matchmaking started...');
+        
+        const checkForSuggestions = () => {
+          try {
+            const suggestion = aiMatchmakingManager.getNextSuggestion();
+            if (suggestion) {
+              console.log('💡 New AI suggestion:', suggestion);
+              setCurrentSuggestion(suggestion);
+              setShowMatchmakingToast(true);
+            }
+          } catch (error) {
+            console.error('❌ Error getting AI suggestion:', error);
+          }
+        };
+
+        // Check for suggestions every 15 seconds (reduced frequency)
+        const interval = setInterval(checkForSuggestions, 15000);
+        
+        // Initial check after 8 seconds
+        const initialTimeout = setTimeout(checkForSuggestions, 8000);
+
+        return () => {
+          clearInterval(interval);
+          clearTimeout(initialTimeout);
+        };
+      } catch (error) {
+        console.error('❌ Error starting AI matchmaking:', error);
+        return () => {}; // Return empty cleanup function
+      }
+    };
+
+    const cleanup = startMatchmaking();
+    return cleanup;
+  }, [userData]);
+
+  // Handle matchmaking toast actions
+  const handleMatchmakingConnect = async (suggestion: MatchSuggestion) => {
+    try {
+      const message = await aiMatchmakingManager.generateConnectionMessage(
+        suggestion.name,
+        suggestion.matchReason
+      );
+      
+      // Simulate LinkedIn connection (since we don't have real API)
+      alert(`🚀 Connection message generated!\n\n"${message}"\n\nNote: This would normally open LinkedIn or send the connection request automatically.`);
+      
+    } catch (error) {
+      console.error('Failed to generate connection message:', error);
+      alert('❌ Failed to generate connection message. Please try again.');
+    }
+  };
+
+  const handleMatchmakingClose = () => {
+    setShowMatchmakingToast(false);
+    setCurrentSuggestion(null);
+  };
 
   const handleFollow = (participantId: string) => {
     const updatedFollowing = followingList.includes(participantId)
@@ -1220,6 +1290,14 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Matchmaking Toast */}
+      <AIMatchmakingToast
+        suggestion={currentSuggestion}
+        onConnect={handleMatchmakingConnect}
+        onClose={handleMatchmakingClose}
+        isVisible={showMatchmakingToast}
+      />
     </div>
   );
 };
